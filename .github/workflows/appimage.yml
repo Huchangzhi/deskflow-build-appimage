@@ -1,0 +1,71 @@
+# 在 GitHub Actions 上构建可在 openKylin(22.04 血统, glibc 2.35) 运行的 Deskflow AppImage
+# 用法：
+#   1) GitHub 上 Fork deskflow/deskflow
+#   2) 在 fork 仓库新建文件 .github/workflows/appimage.yml，粘贴本文件内容
+#   3) Actions 页启用 workflows → 选择 "appimage" → Run workflow
+#   4) 约 8-15 分钟后在 run 页面下载 artifact: Deskflow-AppImage
+# 说明：构建机为 ubuntu-22.04（glibc 2.35），Qt 用官方预编译 6.8.3（glibc 2.28+），
+#       libei/libportal 源码编译，deskflow 取 master（含 #10041/#10044 卡键修复）。
+name: appimage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  appimage:
+    runs-on: ubuntu-22.04
+    env:
+      QT: /opt/Qt/6.8.3/gcc_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git cmake ninja-build pkg-config \
+            libx11-dev libx11-xcb-dev libxcb1-dev libxtst-dev libxkbfile-dev \
+            libxkbcommon-dev libxkbregistry-dev libxi-dev libxinerama-dev \
+            libxrandr-dev libxext-dev libgl1-mesa-dev libglib2.0-dev \
+            libdbus-1-dev libssl-dev libjson-glib-dev meson python3-pip fuse libfuse2
+          sudo python3 -m pip install aqtinstall
+
+      - name: Qt 6.8.3 (official prebuilt, glibc 2.28+)
+        run: sudo python3 -m aqt install-qt --outputdir /opt/Qt linux desktop 6.8.3 gcc_64
+
+      - name: libei 1.6.0
+        run: |
+          git clone --depth 1 --branch 1.6.0 https://gitlab.freedesktop.org/libinput/libei.git
+          meson setup libei/_b libei --prefix=/usr -Ddocumentation=[] -Dtests=disabled -Dliboeffis=disabled
+          sudo ninja -C libei/_b install
+
+      - name: libportal 0.10.0
+        run: |
+          git clone --depth 1 --branch 0.10.0 https://github.com/flatpak/libportal.git
+          meson setup libportal/_b libportal --prefix=/usr -Ddocs=false -Dtests=false \
+            -Dvapi=false -Dintrospection=false -Dbackend-qt6=disabled
+          sudo ninja -C libportal/_b install
+
+      - name: Build Deskflow (master, contains stuck-key fixes)
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_PREFIX_PATH=$QT
+          cmake --build build -j$(nproc)
+          DESTDIR=$GITHUB_WORKSPACE/AppDir cmake --install build
+
+      - name: Package AppImage
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+          export QMAKE=$QT/bin/qmake
+          export VERSION=1.26.0.470-continuous
+          DESKTOP=$(ls AppDir/usr/share/applications/*.desktop | head -1)
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir -d "$DESKTOP" --plugin qt --output appimage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Deskflow-AppImage
+          path: Deskflow-*.AppImage
+          retention-days: 30
