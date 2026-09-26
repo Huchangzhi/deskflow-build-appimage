@@ -29,7 +29,7 @@ jobs:
             libxkbcommon-dev libxkbregistry-dev libxi-dev libxinerama-dev \
             libxrandr-dev libxext-dev libgl1-mesa-dev libglib2.0-dev \
             libdbus-1-dev libssl-dev libjson-glib-dev meson python3-pip fuse libfuse2 g++-12
-          sudo python3 -m pip install aqtinstall "cmake<4"   # jammy 自带 cmake 3.22 < 项目要求 3.24
+          sudo python3 -m pip install aqtinstall "cmake<4" meson   # jammy 自带 cmake 3.22<3.24、meson 0.61<0.62，都不够
 
       - name: Qt 6.8.3 (official prebuilt, glibc 2.28+)
         run: sudo python3 -m aqt install-qt --outputdir /opt/Qt linux desktop 6.8.3 linux_gcc_64
