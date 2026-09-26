@@ -32,7 +32,12 @@ jobs:
           sudo python3 -m pip install aqtinstall "cmake<4" meson   # jammy 自带 cmake 3.22<3.24、meson 0.61<0.62，都不够
 
       - name: Qt 6.8.3 (official prebuilt, glibc 2.28+)
-        run: sudo python3 -m aqt install-qt --outputdir /opt/Qt linux desktop 6.8.3 linux_gcc_64
+        run: |
+          sudo python3 -m aqt install-qt --outputdir /opt/Qt linux desktop 6.8.3 linux_gcc_64
+          ls /opt/Qt/6.8.3/
+          QT_REAL=$(ls -d /opt/Qt/6.8.3/*/ | head -1)
+          echo "QT=${QT_REAL%/}" >> "$GITHUB_ENV"     # 用真实解包目录覆盖 env，后续步骤不再猜路径
+          ls "${QT_REAL%/}/bin/qmake"
 
       - name: libei 1.6.0
         run: |
