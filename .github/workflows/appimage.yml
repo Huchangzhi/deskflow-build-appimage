@@ -30,7 +30,7 @@ jobs:
             libxrandr-dev libxext-dev libgl1-mesa-dev libglib2.0-dev \
             libdbus-1-dev libssl-dev libjson-glib-dev meson python3-pip fuse libfuse2 g++-12 \
             libxkbcommon-x11-0 libxcb-cursor0 \
-            libxcb-icccm4 libxcb-image4 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1
           sudo python3 -m pip install aqtinstall "cmake<4" meson   # jammy 自带 cmake 3.22<3.24、meson 0.61<0.62，都不够
 
       - name: Qt 6.8.3 (official prebuilt, glibc 2.28+)
