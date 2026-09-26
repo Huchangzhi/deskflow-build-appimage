@@ -66,10 +66,14 @@ jobs:
           wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+          QT_REAL=$(ls -d /opt/Qt/6.8.3/*/ | head -1); QT=${QT_REAL%/}
           export QMAKE=$QT/bin/qmake
+          export LD_LIBRARY_PATH=$QT/lib:${LD_LIBRARY_PATH:-}
           export VERSION=1.26.0.470-continuous
           DESKTOP=$(ls AppDir/usr/share/applications/*.desktop | head -1)
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir -d "$DESKTOP" --plugin qt --output appimage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir -d "$DESKTOP" \
+            -i AppDir/usr/share/icons/hicolor/512x512/apps/org.deskflow.deskflow.png \
+            --plugin qt --output appimage
 
       - uses: actions/upload-artifact@v4
         with:
